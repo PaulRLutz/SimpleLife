@@ -38,21 +38,18 @@ class LifeGrid:
   def getNeighbors(self, cell):
     x = cell[0]
     y = cell[1]
-    return [
-            Cell(x=x-1, y=y-1),
-            Cell(x=x,   y=y-1),
-            Cell(x=x+1, y=y-1),
-            Cell(x=x-1, y=y  ),
-            Cell(x=x+1, y=y  ),
-            Cell(x=x-1, y=y+1),
-            Cell(x=x,   y=y+1),
-            Cell(x=x+1, y=y+1),
-           ]
+    yield Cell(x=x-1, y=y-1)
+    yield Cell(x=x,   y=y-1)
+    yield Cell(x=x+1, y=y-1)
+    yield Cell(x=x-1, y=y  )
+    yield Cell(x=x+1, y=y  )
+    yield Cell(x=x-1, y=y+1)
+    yield Cell(x=x,   y=y+1)
+    yield Cell(x=x+1, y=y+1)
 
   def getLiveNeighborNum(self, cell, liveCells, maxNeighbors=4):
-    neighbors = self.getNeighbors(cell)
     neighborCount = 0
-    for neighbor in neighbors:
+    for neighbor in self.getNeighbors(cell):
       if neighbor in liveCells:
         neighborCount += 1
       if neighborCount >= maxNeighbors:
@@ -66,8 +63,7 @@ class LifeGrid:
    
     # Populate deadCellsToProcess 
     for cell in self.liveCells:
-      neighbors = self.getNeighbors(cell)
-      [deadCellsToProcess.append(neighbor) for neighbor in neighbors if(neighbor not in self.liveCells and neighbor not in deadCellsToProcess)]
+      [deadCellsToProcess.append(neighbor) for neighbor in self.getNeighbors(cell) if(neighbor not in self.liveCells and neighbor not in deadCellsToProcess)]
 
     for cell in liveCellsToProcess:
       if (self.width > 0 and cell[0] > self.width) or (self.height > 0 and cell[1] > self.height) or (cell[1] < 0) or (cell[0] < 0):
