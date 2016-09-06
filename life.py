@@ -157,7 +157,7 @@ def getUserInput(life):
 
 def main():
   rows, columns = os.popen('stty size', 'r').read().split()
-  life = LifeGrid(width=int(columns), height=int(rows))
+  life = LifeGrid(seedFile="common_patterns_seed.txt", width=int(columns), height=int(rows))
   while True:
     life.printGrid()
     life.tick()
