@@ -4,6 +4,8 @@ import time
 
 import sys
 
+import select
+
 import os
 
 Cell = collections.namedtuple("Cell", "x y")
@@ -107,12 +109,65 @@ class LifeGrid:
     for row in printableGrid:
       print "".join(row)
 
+  def outputSeed(self):
+    fileName = "{}_seed.txt".format(time.time())
+
+    finalList = []
+
+    [finalList.append([" "]*self.width) for y in xrange(self.height)]
+
+    for cell in self.liveCells:
+      try:
+        finalList[cell[1]][cell[0]] = "*"
+      except IndexError:
+        print "Out of bounds live cell"
+        pass # Live cell is out of bounds, don't worry about it
+
+    with open(fileName, "w") as seedFile:
+      for lineList in finalList:
+        seedFile.write("".join(lineList) + "\n")
+
+life = None
+def outputSeed():
+  global life
+  if life is not None:
+    life.outputSeed()
+    return False
+  else:
+    return True
+
+commandDict = {
+                "quit" : ("Exits the program", (lambda: True)),
+                "print": ("Outputs current grid to a seed file", outputSeed),
+                "continue" : ("Continue", (lambda: False))
+}
+
+def getUserInput():
+  while True:
+    print "What would you like to do?"
+    print "Options:"
+    for key, commandTup in commandDict.iteritems():
+      print "  '{}' : {}".format(key, commandTup[0])
+    userInput = raw_input("").strip()
+    if userInput in commandDict:
+      return commandDict[userInput][1]()
+    else:
+      print "Did not recognize command: '{}'".format(userInput)
+
 def main():
+  global life
   rows, columns = os.popen('stty size', 'r').read().split()
   life = LifeGrid(width=int(columns), height=int(rows))
   while True:
     life.printGrid()
     life.tick()
+    if select.select([sys.stdin,],[],[],0.0)[0]:
+      shouldBreak = getUserInput()
+      if shouldBreak:
+        break
+    else:
+      print "Press enter to pause"
+      pass
     time.sleep(.1)
 
 if __name__ == "__main__":
