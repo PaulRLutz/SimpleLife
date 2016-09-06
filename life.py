@@ -14,12 +14,15 @@ class LifeGrid:
   SEED_LIST = "list"
   SEED_IMAGE = "image"
 
-  def __init__(self, width=-1, height=-1, seedFile="seed.txt", seedFormat=SEED_LIST):
-    self.liveCells = [Cell(x=1, y=1),
-                      Cell(x=1, y=2),
-                      Cell(x=1, y=3),]
+  def __init__(self, width=-1, height=-1, seedFile="seed.txt", seedFormat=SEED_LIST, born=[3], survives=[2,3]):
     self.liveCells = self.parseSeedFile(seedFile, seedFormat)
     self.step = 0
+
+    self.born = born
+    self.survives = survives
+
+    self.maxBorn = max(self.born)+1
+    self.maxSurvives = max(self.survives)+1
 
     self.deadCellChar = "_"
     self.liveCellChar = "O"
@@ -49,7 +52,9 @@ class LifeGrid:
     yield Cell(x=x,   y=y+1)
     yield Cell(x=x+1, y=y+1)
 
-  def getLiveNeighborNum(self, cell, liveCells, maxNeighbors=4):
+  def getLiveNeighborNum(self, cell, liveCells=None, maxNeighbors=4):
+    if liveCells is None:
+      liveCells = self.liveCells
     neighborCount = 0
     for neighbor in self.getNeighbors(cell):
       if neighbor in liveCells:
@@ -69,15 +74,13 @@ class LifeGrid:
 
     for cell in liveCellsToProcess:
       if (self.width > 0 and cell[0] > self.width) or (self.height > 0 and cell[1] > self.height) or (cell[1] < 0) or (cell[0] < 0):
-        continue
-      liveNeighbors = self.getLiveNeighborNum(cell, self.liveCells)
-      if liveNeighbors == 2 or liveNeighbors == 3:
+        continue # Don't ignore a cell if it is out of bounds (greater than width or height, or an x or y less than 0)
+      if self.getLiveNeighborNum(cell, maxNeighbors=self.maxSurvives) in self.survives:
         newLiveCells.append(cell)
     for cell in deadCellsToProcess:
       if (self.width > 0 and cell[0] > self.width) or (self.height > 0 and cell[1] > self.height) or (cell[1] < 0) or (cell[0] < 0):
         continue
-      liveNeighbors = self.getLiveNeighborNum(cell, self.liveCells)
-      if liveNeighbors == 3:
+      if self.getLiveNeighborNum(cell, maxNeighbors=self.maxBorn) in self.born:
         newLiveCells.append(cell)
 
     self.liveCells = newLiveCells
@@ -125,11 +128,9 @@ class LifeGrid:
 
     with open(fileName, "w") as seedFile:
       for lineList in finalList:
-        seedFile.write("".join(lineList) + "\n")
+        seedFile.write("".join(lineList).rstrip() + "\n") # rstrip to remove unecessary trailing spaces
 
-life = None
-def outputSeed():
-  global life
+def outputSeed(life):
   if life is not None:
     life.outputSeed()
     return False
@@ -137,12 +138,12 @@ def outputSeed():
     return True
 
 commandDict = {
-                "quit" : ("Exits the program", (lambda: True)),
+                "quit" : ("Exits the program", (lambda x: True)),
                 "print": ("Outputs current grid to a seed file", outputSeed),
-                "continue" : ("Continue", (lambda: False))
+                "continue" : ("Continue", (lambda x: False))
 }
 
-def getUserInput():
+def getUserInput(life):
   while True:
     print "What would you like to do?"
     print "Options:"
@@ -150,19 +151,18 @@ def getUserInput():
       print "  '{}' : {}".format(key, commandTup[0])
     userInput = raw_input("").strip()
     if userInput in commandDict:
-      return commandDict[userInput][1]()
+      return commandDict[userInput][1](life)
     else:
       print "Did not recognize command: '{}'".format(userInput)
 
 def main():
-  global life
   rows, columns = os.popen('stty size', 'r').read().split()
   life = LifeGrid(width=int(columns), height=int(rows))
   while True:
     life.printGrid()
     life.tick()
     if select.select([sys.stdin,],[],[],0.0)[0]:
-      shouldBreak = getUserInput()
+      shouldBreak = getUserInput(life)
       if shouldBreak:
         break
     else:
