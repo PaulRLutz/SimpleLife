@@ -34,7 +34,7 @@ class LifeGrid:
     liveCells = []
     with open(seedFile, "r") as seed:
       for lineIndex, line in enumerate(seed):
-        print("Processing line: '{}'".format(line))
+        print "Processing line: '{}'".format(line)
         for charIndex, character in enumerate(line):
           if character == "*":
             liveCells.append(Cell(x=charIndex, y=lineIndex))
@@ -102,7 +102,7 @@ class LifeGrid:
     if self.step > 0:
       self.clearGrid(height, width)
 
-    printableGrid = [[self.deadCellChar for x in range(1, width)] for y in range(1, height)]
+    printableGrid = [[self.deadCellChar for x in xrange(1, width)] for y in xrange(1, height)]
     for cell in liveCells:
       try:
         printableGrid[cell[1]][cell[0]] = self.liveCellChar
@@ -110,20 +110,20 @@ class LifeGrid:
         # live cell is off the screen, don't worry about it.
         pass
     for row in printableGrid:
-      print("".join(row))
+      print "".join(row)
 
   def outputSeed(self):
     fileName = "{}_seed.txt".format(time.time())
 
     finalList = []
 
-    [finalList.append([" "]*self.width) for y in range(self.height)]
+    [finalList.append([" "]*self.width) for y in xrange(self.height)]
 
     for cell in self.liveCells:
       try:
         finalList[cell[1]][cell[0]] = "*"
       except IndexError:
-        print("Out of bounds live cell")
+        print "Out of bounds live cell"
         pass # Live cell is out of bounds, don't worry about it
 
     with open(fileName, "w") as seedFile:
@@ -145,15 +145,15 @@ commandDict = {
 
 def getUserInput(life):
   while True:
-    print("What would you like to do?")
-    print("Options:")
-    for key, commandTup in commandDict.items():
-      print("  '{}' : {}".format(key, commandTup[0]))
-    userInput = input("").strip()
+    print "What would you like to do?"
+    print "Options:"
+    for key, commandTup in commandDict.iteritems():
+      print "  '{}' : {}".format(key, commandTup[0])
+    userInput = raw_input("").strip()
     if userInput in commandDict:
       return commandDict[userInput][1](life)
     else:
-      print("Did not recognize command: '{}'".format(userInput))
+      print "Did not recognize command: '{}'".format(userInput)
 
 def main():
   rows, columns = os.popen('stty size', 'r').read().split()
@@ -166,7 +166,7 @@ def main():
       if shouldBreak:
         break
     else:
-      print("Press enter to pause")
+      print "Press enter to pause"
       pass
     time.sleep(.1)
 
