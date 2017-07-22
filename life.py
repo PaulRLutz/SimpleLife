@@ -8,6 +8,8 @@ import select
 
 import os
 
+import termios
+
 Cell = collections.namedtuple("Cell", "x y")
 
 class LifeGrid:
@@ -34,7 +36,7 @@ class LifeGrid:
     live_cells = []
     with open(seed_file, "r") as seed:
       for line_index, line in enumerate(seed):
-        print("Processing line: '{}'".format(line))
+        print(f"Processing line: '{line}'")
         for char_index, character in enumerate(line):
           if character == "*":
             live_cells.append(Cell(x=char_index, y=line_index))
@@ -112,8 +114,9 @@ class LifeGrid:
     for row in printable_grid:
       print("".join(row))
 
-  def output_seed(self):
-    file_name = "{}_seed.txt".format(time.time())
+  def output_seed(self, file_name=None):
+    if file_name is None:
+      file_name = f"{time.time()}_seed.txt"
 
     final_list = []
 
@@ -130,30 +133,40 @@ class LifeGrid:
       for line_list in final_list:
         seed_file.write("".join(line_list).rstrip() + "\n") # rstrip to remove unecessary trailing spaces
 
-def output_seed(life):
+def output_seed(life, file_name=None):
   if life is not None:
-    life.output_seed()
+    life.output_seed(file_name)
     return False
   else:
     return True
 
 command_dict = {
-                "quit" : ("Exits the program", (lambda x: True)),
-                "print": ("Outputs current grid to a seed file", output_seed),
-                "continue" : ("Continue", (lambda x: False))
+                "quit" : "Exits the program",
+                "continue" : "Continue",
+                "print": "Outputs current grid to a seed file, (can specify seed file, ex: 'print my_seed.txt' )", 
 }
 
 def get_user_input(life):
   while True:
     print("What would you like to do?")
     print("Options:")
-    for key, command_tup in command_dict.items():
-      print("  '{}' : {}".format(key, command_tup[0]))
+    for key, value in command_dict.items():
+      print(f"  '{key}' : {value}")
     user_input = input("").strip()
-    if user_input in command_dict:
-      return command_dict[user_input][1](life)
+    user_input_list = user_input.split()
+    if len(user_input_list) > 0 and user_input_list[0] in command_dict:
+
+      if user_input_list[0] == "quit":
+        return True
+      elif user_input_list[0] == "continue":
+        return False
+      elif user_input_list[0] == "print":
+        if len(user_input_list) > 1:
+          return output_seed(life, file_name=user_input_list[1])
+        else:
+          return output_seed(life)
     else:
-      print("Did not recognize command: '{}'".format(user_input))
+      print(f"Did not recognize command: '{user_input}'")
 
 def main():
   rows, columns = os.popen('stty size', 'r').read().split()
@@ -162,6 +175,7 @@ def main():
     life.print_grid()
     life.tick()
     if select.select([sys.stdin,],[],[],0.0)[0]:
+      termios.tcflush(sys.stdin, termios.TCIOFLUSH) # flush new line from stdin: https://stackoverflow.com/a/24618062
       should_break = get_user_input(life)
       if should_break:
         break
