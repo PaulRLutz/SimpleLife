@@ -14,8 +14,8 @@ class LifeGrid:
   SEED_LIST = "list"
   SEED_IMAGE = "image"
 
-  def __init__(self, width=-1, height=-1, seedFile="seed.txt", seedFormat=SEED_LIST, born=[3], survives=[2,3]):
-    self.liveCells = self.parseSeedFile(seedFile, seedFormat)
+  def __init__(self, width=-1, height=-1, seed_file="seed.txt", seed_format=SEED_LIST, born=[3], survives=[2,3]):
+    self.live_cells = self.parse_seed_file(seed_file, seed_format)
     self.step = 0
 
     self.born = born
@@ -30,17 +30,17 @@ class LifeGrid:
     self.width = width
     self.height = height
 
-  def parseSeedFile(self, seedFile, seedFormat):
-    liveCells = []
-    with open(seedFile, "r") as seed:
-      for lineIndex, line in enumerate(seed):
+  def parse_seed_file(self, seed_file, seed_format):
+    live_cells = []
+    with open(seed_file, "r") as seed:
+      for line_index, line in enumerate(seed):
         print("Processing line: '{}'".format(line))
-        for charIndex, character in enumerate(line):
+        for char_index, character in enumerate(line):
           if character == "*":
-            liveCells.append(Cell(x=charIndex, y=lineIndex))
-    return liveCells
+            live_cells.append(Cell(x=char_index, y=line_index))
+    return live_cells
 
-  def getNeighbors(self, cell):
+  def get_neighbors(self, cell):
     x = cell[0]
     y = cell[1]
     yield Cell(x=x-1, y=y-1)
@@ -52,118 +52,118 @@ class LifeGrid:
     yield Cell(x=x,   y=y+1)
     yield Cell(x=x+1, y=y+1)
 
-  def getLiveNeighborNum(self, cell, liveCells=None, maxNeighbors=4):
-    if liveCells is None:
-      liveCells = self.liveCells
-    neighborCount = 0
-    for neighbor in self.getNeighbors(cell):
-      if neighbor in liveCells:
-        neighborCount += 1
-      if neighborCount >= maxNeighbors:
+  def get_live_neighbor_num(self, cell, live_cells=None, max_neighbors=4):
+    if live_cells is None:
+      live_cells = self.live_cells
+    neighbor_count = 0
+    for neighbor in self.get_neighbors(cell):
+      if neighbor in live_cells:
+        neighbor_count += 1
+      if neighbor_count >= max_neighbors:
         break
-    return neighborCount
+    return neighbor_count
 
   def tick(self):
-    newLiveCells = []
-    liveCellsToProcess = list(self.liveCells)
-    deadCellsToProcess = []
+    new_live_cells = []
+    live_cells_to_process = list(self.live_cells)
+    dead_cells_to_process = []
    
-    # Populate deadCellsToProcess 
-    for cell in self.liveCells:
-      [deadCellsToProcess.append(neighbor) for neighbor in self.getNeighbors(cell) if(neighbor not in self.liveCells and neighbor not in deadCellsToProcess)]
+    # Populate dead_cells_to_process 
+    for cell in self.live_cells:
+      [dead_cells_to_process.append(neighbor) for neighbor in self.get_neighbors(cell) if(neighbor not in self.live_cells and neighbor not in dead_cells_to_process)]
 
-    for cell in liveCellsToProcess:
+    for cell in live_cells_to_process:
       if (self.width > 0 and cell[0] > self.width) or (self.height > 0 and cell[1] > self.height) or (cell[1] < 0) or (cell[0] < 0):
         continue # Don't ignore a cell if it is out of bounds (greater than width or height, or an x or y less than 0)
-      if self.getLiveNeighborNum(cell, maxNeighbors=self.maxSurvives) in self.survives:
-        newLiveCells.append(cell)
-    for cell in deadCellsToProcess:
+      if self.get_live_neighbor_num(cell, max_neighbors=self.maxSurvives) in self.survives:
+        new_live_cells.append(cell)
+    for cell in dead_cells_to_process:
       if (self.width > 0 and cell[0] > self.width) or (self.height > 0 and cell[1] > self.height) or (cell[1] < 0) or (cell[0] < 0):
         continue
-      if self.getLiveNeighborNum(cell, maxNeighbors=self.maxBorn) in self.born:
-        newLiveCells.append(cell)
+      if self.get_live_neighbor_num(cell, max_neighbors=self.maxBorn) in self.born:
+        new_live_cells.append(cell)
 
-    self.liveCells = newLiveCells
+    self.live_cells = new_live_cells
     
     self.step += 1
 
-  def clearGrid(self, width, height):
+  def clear_grid(self, width, height):
     os.system("clear")
 
-  def printGrid(self, height=None, width=None, liveCells=None):
+  def print_grid(self, height=None, width=None, live_cells=None):
     if width is None:
       width = self.width
     if height is None:
       height = self.height
 
-    if liveCells is None:
-      liveCells = self.liveCells
+    if live_cells is None:
+      live_cells = self.live_cells
 
     if self.step > 0:
-      self.clearGrid(height, width)
+      self.clear_grid(height, width)
 
-    printableGrid = [[self.deadCellChar for x in range(1, width)] for y in range(1, height)]
-    for cell in liveCells:
+    printable_grid = [[self.deadCellChar for x in range(1, width)] for y in range(1, height)]
+    for cell in live_cells:
       try:
-        printableGrid[cell[1]][cell[0]] = self.liveCellChar
+        printable_grid[cell[1]][cell[0]] = self.liveCellChar
       except IndexError:
         # live cell is off the screen, don't worry about it.
         pass
-    for row in printableGrid:
+    for row in printable_grid:
       print("".join(row))
 
-  def outputSeed(self):
-    fileName = "{}_seed.txt".format(time.time())
+  def output_seed(self):
+    file_name = "{}_seed.txt".format(time.time())
 
-    finalList = []
+    final_list = []
 
-    [finalList.append([" "]*self.width) for y in range(self.height)]
+    [final_list.append([" "]*self.width) for y in range(self.height)]
 
-    for cell in self.liveCells:
+    for cell in self.live_cells:
       try:
-        finalList[cell[1]][cell[0]] = "*"
+        final_list[cell[1]][cell[0]] = "*"
       except IndexError:
         print("Out of bounds live cell")
         pass # Live cell is out of bounds, don't worry about it
 
-    with open(fileName, "w") as seedFile:
-      for lineList in finalList:
-        seedFile.write("".join(lineList).rstrip() + "\n") # rstrip to remove unecessary trailing spaces
+    with open(file_name, "w") as seed_file:
+      for line_list in final_list:
+        seed_file.write("".join(line_list).rstrip() + "\n") # rstrip to remove unecessary trailing spaces
 
-def outputSeed(life):
+def output_seed(life):
   if life is not None:
-    life.outputSeed()
+    life.output_seed()
     return False
   else:
     return True
 
-commandDict = {
+command_dict = {
                 "quit" : ("Exits the program", (lambda x: True)),
-                "print": ("Outputs current grid to a seed file", outputSeed),
+                "print": ("Outputs current grid to a seed file", output_seed),
                 "continue" : ("Continue", (lambda x: False))
 }
 
-def getUserInput(life):
+def get_user_input(life):
   while True:
     print("What would you like to do?")
     print("Options:")
-    for key, commandTup in commandDict.items():
-      print("  '{}' : {}".format(key, commandTup[0]))
-    userInput = input("").strip()
-    if userInput in commandDict:
-      return commandDict[userInput][1](life)
+    for key, command_tup in command_dict.items():
+      print("  '{}' : {}".format(key, command_tup[0]))
+    user_input = input("").strip()
+    if user_input in command_dict:
+      return command_dict[user_input][1](life)
     else:
-      print("Did not recognize command: '{}'".format(userInput))
+      print("Did not recognize command: '{}'".format(user_input))
 
 def main():
   rows, columns = os.popen('stty size', 'r').read().split()
-  life = LifeGrid(seedFile="common_patterns_seed.txt", width=int(columns), height=int(rows))
+  life = LifeGrid(seed_file="common_patterns_seed.txt", width=int(columns), height=int(rows))
   while True:
-    life.printGrid()
+    life.print_grid()
     life.tick()
     if select.select([sys.stdin,],[],[],0.0)[0]:
-      shouldBreak = getUserInput(life)
-      if shouldBreak:
+      should_break = get_user_input(life)
+      if should_break:
         break
     else:
       print("Press enter to pause")
